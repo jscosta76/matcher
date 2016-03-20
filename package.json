@@ -1,0 +1,32 @@
+{
+  "name": "matcher",
+  "version": "0.0.1",
+  "description": "Matcher App",
+  "main": "server.js",
+  "scripts": {
+    "test": "test",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jscosta76/matcher.git"
+  },
+  "author": "JC",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jscosta76/matcher/issues"
+  },
+  "homepage": "https://github.com/jscosta76/matcher",
+  "dependencies": {
+    "bcrypt": "^0.8.5",
+    "body-parser": "^1.15.0",
+    "colors": "^1.1.2",
+    "express": "^4.13.4",
+    "faker": "^3.0.1",
+    "lodash": "^4.6.1",
+    "method-override": "^2.3.5",
+    "mongoose": "^4.4.8",
+    "morgan": "^1.7.0",
+    "nodemon": "^1.9.1"
+  }
+}
