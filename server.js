@@ -51,6 +51,7 @@ router.route('/user')
 				};
 				req.session.loggedIn = true;
 				res.redirect('/user');*/
+				res.json({ message: 'User successfully created!' });
 			}
 		});
 	})
