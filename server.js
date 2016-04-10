@@ -1,71 +1,96 @@
 var express = require('express');
+var path = require('path');
+var favicon = require('path');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-
-var app = express();
-app.use(bodyParser());
-
-var port = process.env.PORT || 3000;
-
 var mongoose = require('mongoose');
 
-mongoose.connect('mongodb://127.0.0.1/matcherapp');
+// module for session storage
+var app = express();
 
-var User = require('./server/models/user');
+//Import passport and warning modules
+var passport = require('passport');
+var flash = require('connect-flash');
 
-var router = express.Router();
+// setup routes
+var routes = require('./server/routes/index');
+//var speakers = require('./server/routes/speakers');
 
-router.use(function(req, res, next){
-	console.log('Operating...');
-	next();
+// Database config
+var configDB = require('./server/config/config.js');
+// connect to database
+mongoose.connect(configDB.url);
+
+// passport configuration
+//require('./server/config/passport')(passport);
+
+//view engine setup
+app.set('view', path.join(__dirname, 'server/views'));
+app.set('view engine', 'ejs');
+
+app.use(favicon());
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// required for passport
+// secret for session
+app.use(session({
+    secret: 'sometextgohere',
+    saveUninitialized: true,
+    resave: true,
+    //store session on MongoDB using express-session + connect mongo
+    store: new MongoStore({
+        url: configDB.url,
+        collection : 'sessions'
+    })
+}));
+
+// init passport authentication
+app.use(passport.initialize());
+// persist login sessions
+app.use(passport.session());
+//flash messages
+app.use(flash());
+
+// load routes
+app.use('/', routes);
+//app.use('/api/speakers', speakers);
+
+// catch 404 and forward to error handler
+app.use(function(req, res, next){
+	var err = new Error('Not found');
+		err.status = 404;
+		next(err);
 });
 
-router.get('/', function(req, res){
-	res.json({message:'API is up and running'});
-});
-
-router.route('/user')
-	.post(function(req, res){
-		var user = new User();
-		
-		user.firstName = req.body.firstName;
-		user.lastName = req.body.lastName;
-		user.displayName = req.body.displayName;
-		user.password = req.body.password;	
-		user.email = req.body.email;
-	
-		user.save(function(err){
-			if(err){
-				if(err.code===11000){
-					//res.redirect('/user/new?exists=true');
-					console.log('email already exists');
-				} else {
-					//res.redirect('?error=true');
-					console.log('some other error occured');
-				}
-			} else {
-				console.log('User successfully saved: ' + user);
-				/*req.session.user = {
-					"name": user.firstName+' '+user.lastName,
-					"email":user.email,
-					"_id":user._id
-				};
-				req.session.loggedIn = true;
-				res.redirect('/user');*/
-				res.json({ message: 'User successfully created!' });
-			}
-		});
-	})
-	.get(function(req, res){
-		User.find(function(err, users){
-			if(err){
-				res.send(err);
-			}
-			
-			res.json(users);
+// dev error handler - prints stack trace
+if(app.get('env') === 'development'){
+	app.use(function(err, req, res, next){
+		res.status(err.status || 500);
+		res.render('error', {
+			message: err.message,
+			error: err
 		});
 	});
+}
 
-app.use('/api', router);
 
-app.listen(port);
-console.log('Stuff happening on port ' + port);
+// prod error handler - no stack tree
+app.use(function(err, req, res, next){
+	res.status(err.status || 500);
+	res.render('error', {
+		message: err.message,
+		error:{}
+	});
+});
+
+module.exports = app;
+app.set('port', process.env.PORT || 3000);
+
+var server = app.listen(app.get('port'), function(){
+	console.log('Magic happens here: ' + server.address().port);
+});
